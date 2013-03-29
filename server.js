@@ -130,17 +130,17 @@ app.post('/test', function(req, res){
 var scrapedMessages = [];
 app.get('/scrape',function(req,res){
 	
-	/* Test scrapping code
+	 //Test scrapping code
 	 jsdom.env(
-  "http://nodejs.org/dist/",
-  ["http://code.jquery.com/jquery.js"],
-  function (errors, window) {
-  	console.log('Errors'+errors);
-  	console.log('Window'+window);
-    //console.log("there have been", window.$("a").length, "nodejs releases!");
-  }
-);
-	*/
+	  "http://nodejs.org/dist/",
+	  ["http://code.jquery.com/jquery.js"],
+	  function (errors, window) {
+	  	console.log('Errors'+errors);
+	  	console.log('Window'+window);
+	    //console.log("there have been", window.$("a").length, "nodejs releases!");
+	  }
+	);
+
 
 	// Scrape x amount of pages of text messages from textsfromlastnight
 	var numPages = 10;
@@ -163,7 +163,7 @@ app.get('/scrape',function(req,res){
 
         // Format into bad messages
         var formatted = messages.map(function(msg){
-        	return {text:msg,type:['bad']};
+        	return {data:msg,types:['bad']};
         });
 
         // Save
@@ -180,12 +180,41 @@ app.get('/scrape',function(req,res){
 
 });
 
+/*
+ * Read the scrapped messages from tfln, this is easier then adding a libary for non async or waiting till all pages are scraped.
+ * It will do for this 'MVP', but should be changed sometime. 
+ *
+ */
 app.get('/bad',function (req,res){
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.write(JSON.stringify(scrapedMessages));
   res.end();
 });
 
-app.listen(3000);
-console.log('Listening on port 3000');
+/*
+ * Parse my message dump from s2, these are marked as good messages. Well, alot better then the one from tfln...
+ *
+ */
+app.get('/good', function (req,res){
+
+	msgFile = fs.readFileSync("./messages.json")
+	msgs = JSON.parse(msgFile.toString());
+
+	console.log(msgs.size);
+
+	formatted = msgs.items.map(function (e,i,a){
+		return {data:e.synopsis,types:['safe']}
+	});
+
+	console.log('parsed ' +formatted.length + ' messages')
+
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.write(JSON.stringify(formatted));
+  res.end();
+
+});
+
+var port = 8080;
+app.listen(port);
+console.log('Listening on '+port);
 
