@@ -1,6 +1,5 @@
 var express = require('express');
 var brain = require('brain');
-//var jsdom  = require('jsdom');
 var fs = require("fs");
 var app = express();
 
@@ -15,29 +14,26 @@ var net = new brain.NeuralNetwork();
 
 // Fire up the NLP
 var natural = require('natural'),
-tokenizer = new natural.WordTokenizer();
-
+tokenizer = new natural.WordTokenizer(),
+classifier = new natural.BayesClassifier();
+var trained = false;
 
 
 /*
- * End point for training the neural network, just one big text area of json data.
- *
- * In the format: [{text,[type]}]
+ * Train the neural network.
  *
  */
-app.post('/train', function(req, res){
-	console.log('training')
+function trainNN (){
 
-	var dataRaw = req.body.message.data;
-	console.log(dataRaw);
+	var data = bad.splice(0,20).concat(good.splice(0,20));
 
-	// Parse
-	var data = JSON.parse(dataRaw);
-	console.log(data);
+	var count = 0;
+
+	console.log('Training with : ' + data.length + ' messages');
 
 	// Use NLP to break into keywords
 	var training = data.map(function(msg){
-		
+
 		var msgTokens = tokenizer.tokenize(msg.data);
 	
 		// Make each message into an object, with each token as a field, whos value is the occourance of the word.
@@ -50,7 +46,7 @@ app.post('/train', function(req, res){
 		});
 
 		// Check
-		console.log(input);
+		//console.log(input);
 
 		// Change tokens into format needed for input
 		// Make each type the message is associated with as 1 for the output
@@ -61,32 +57,74 @@ app.post('/train', function(req, res){
   		output[e] = 1
   	});
 
-  	console.log(output);
+		// Check
+  	//console.log(output);
 
   	return {input:input,output:output};
 
 	});
 
-	training.forEach(function (e,i,a) {
 
-		console.log(e);
-
-	});
-
-	// Magic goes here
-	// This is the brain example for is text should be black and white on different background colors 
-	// net.train([{input: { r: 0.03, g: 0.7, b: 0.5 }, output: { black: 1 }},
-  //         {input: { r: 0.16, g: 0.09, b: 0.2 }, output: { white: 1 }},
-  //         {input: { r: 0.5, g: 0.5, b: 1.0 }, output: { white: 1 }}]);
-	//var output = net.run({ r: 1, g: 0.4, b: 0 });  // { white: 0.99, black: 0.002 }
-
-	// We substiture this for our data
 	net.train(training);
 
-	console.log('done');
+	console.log('Done training');
 	
-	// Responce
-  var body = 'Your AI had been trained :)'
+
+}
+
+// Classify using the Neural Network 
+function classifyNN(msg){
+
+	var msgTokens = tokenizer.tokenize(msg);
+
+	var input = {}
+	msgTokens.forEach(function (e,i,a){
+		input[e] = 1;
+	});
+
+	return net.run(input);
+
+}
+
+// Train the BayesClassifier
+function trainBayes(){
+	var data = bad.concat(good);
+
+	for(var i = 0 ; i < data.length ; i ++){
+		classifier.addDocument(data[i].data, data[i].types[0]);
+	}
+
+	classifier.train();
+
+}
+
+// Classify using the BayesClassifier 
+function classifyBayes(msg){
+	return classifier.classify(msg);
+}
+
+
+/*
+ * End point for testing a message form data with a message{content} data field
+ */
+app.post('/test', function(req, res){
+	var msg = req.body.message.content;
+
+	// lazy load the classifyers
+	if(!trained){
+		
+		trainBayes();
+		trainNN();
+
+		trained = true;
+	}
+
+	// Test both
+	outputBayes = classifyBayes(msg)
+	outputNN = classifyNN(msg)
+
+	// Display results
+  var body = 'bayes:'+outputBayes + ' | NN:' + JSON.stringify(outputNN) + ' - ' +msg;
   res.setHeader('Content-Type', 'text/plain');
   res.setHeader('Content-Length', body.length);
   res.end(body);
@@ -95,38 +133,9 @@ app.post('/train', function(req, res){
 
 
 /*
- * End point for testing a message form data with a message{content} data field
+ * Scrapping code, to get messages from tfln
+ *
  */
-app.post('/test', function(req, res){
-
-	var msg = req.body.message;
-	console.log('Received:' + msg.content);
-
-	// turn message into the same format as above
-	var msgTokens = tokenizer.tokenize(msg.content);
-	
-	// Make each message into an object, with each token as a field, whos value is the occourance of the word.
-  // This forms the input for brain
-  // for example {drugs:1}
-
-	var input = {}
-	msgTokens.forEach(function (e,i,a){
-		input[e] = 1;
-	});
-
-
-	var output = net.run(input);
-
-	// Magic happens here
-	console.log(output);
-  var body = '<h1>Message</h1> + <p>' +msg.content +'</p>' + '<h1>Classification</h1><p>'+ JSON.stringify(output)+'</p>';
-
-  res.setHeader('Content-Type', 'text/plain');
-  res.setHeader('Content-Length', body.length);
-  res.end(body);
-
-});
-
 var scrapedMessages = [];
 app.get('/scrape',function(req,res){
 	
@@ -185,34 +194,60 @@ app.get('/scrape',function(req,res){
  * It will do for this 'MVP', but should be changed sometime. 
  *
  */
-app.get('/bad',function (req,res){
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.write(JSON.stringify(scrapedMessages));
-  res.end();
-});
 
 /*
- * Parse my message dump from s2, these are marked as good messages. Well, alot better then the one from tfln...
+ * Parse my message dump from s2, these are marked as good messages. Well, alot better then the ones from tfln...
  *
  */
-app.get('/good', function (req,res){
+function formatGoodFromPhone(){
 
-	msgFile = fs.readFileSync("./messages.json")
+		msgFile = fs.readFileSync("./messages.json")
+		msgs = JSON.parse(msgFile.toString());
+
+
+		console.log(msgs.size);
+
+		formatted = msgs.items.map(function (e,i,a){
+			return {data:e.synopsis,types:['safe']}
+		});
+
+		console.log('parsed ' +formatted.length + ' messages')
+
+		return formatted;
+
+}
+
+/*
+ * Read in the JSON dump for good messages
+ *
+ */
+function getGood(){
+
+	msgFile = fs.readFileSync("./good.json")
 	msgs = JSON.parse(msgFile.toString());
+	console.log('Good:' +msgs.length);
 
-	console.log(msgs.size);
+	return msgs;
+}
 
-	formatted = msgs.items.map(function (e,i,a){
-		return {data:e.synopsis,types:['safe']}
-	});
+/*
+ * Read in the JSON dump for bad messages
+ *
+ */
+function getBad(){
 
-	console.log('parsed ' +formatted.length + ' messages')
+	msgFile = fs.readFileSync("./bad.json")
+	msgs = JSON.parse(msgFile.toString());
+	console.log('Bad:'+msgs.length);
 
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.write(JSON.stringify(formatted));
-  res.end();
+	return msgs;
 
-});
+}
+
+// Read
+var bad = getBad();
+var good = getGood();
+
 
 var port = 8080;
 app.listen(port);
