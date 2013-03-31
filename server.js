@@ -124,11 +124,14 @@ app.post('/test', function(req, res){
 	outputNN = classifyNN(msg)
 	outputKeywords = checkKeywords(keywords, msg);
 
-	// Display results
-  var body = 'bayes:'+outputBayes + ' | NN:' + JSON.stringify(outputNN) + ' | Keywords ' +JSON.stringify(outputKeywords) + ' - ' +msg;
-  res.setHeader('Content-Type', 'text/plain');
-  res.setHeader('Content-Length', body.length);
-  res.end(body);
+ 	res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.write(JSON.stringify({
+  	bayes: outputBayes,
+  	nn: outputNN,
+  	keywords: outputKeywords
+  }));
+
+ 	res.end();
 
 });
 
