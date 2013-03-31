@@ -122,9 +122,10 @@ app.post('/test', function(req, res){
 	// Test both
 	outputBayes = classifyBayes(msg)
 	outputNN = classifyNN(msg)
+	outputKeywords = checkKeywords(keywords, msg);
 
 	// Display results
-  var body = 'bayes:'+outputBayes + ' | NN:' + JSON.stringify(outputNN) + ' - ' +msg;
+  var body = 'bayes:'+outputBayes + ' | NN:' + JSON.stringify(outputNN) + ' | Keywords ' +JSON.stringify(outputKeywords) + ' - ' +msg;
   res.setHeader('Content-Type', 'text/plain');
   res.setHeader('Content-Length', body.length);
   res.end(body);
@@ -244,9 +245,48 @@ function getBad(){
 
 }
 
-// Read
+function getKeywords(){
+	keywordsFile = fs.readFileSync("./keywords.json")
+	keywords = JSON.parse(keywordsFile.toString());
+
+	return keywords;
+
+}
+
+function checkKeywords(keywords, sentance){
+	
+
+	var msgTokens = tokenizer.tokenize(sentance);
+ 
+
+	var matched = [];
+
+	keywords.forEach(function (e,i,a){
+
+		var type = e.type;
+
+		e.words.forEach(function (keyword,i,a) {
+
+			msgTokens.forEach(function (msgtoken, i, a){
+
+				if(msgtoken === keyword){
+					matched.push(type);
+				}
+
+			})
+
+		});
+
+	});
+
+	return matched;
+
+}
+
+// Read files
 var bad = getBad();
 var good = getGood();
+var keywords = getKeywords();
 
 
 var port = 8080;
