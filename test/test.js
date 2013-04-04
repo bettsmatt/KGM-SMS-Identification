@@ -29,6 +29,15 @@ describe("fileIO", function() {
 });
 
 describe("fileIO", function() {
+    it("should return a defined list of one to many 'good' objects", function() {
+        var returnedList = file.getKeywords();
+        assert(typeof returnedList === 'object', "returned value is not objectish");
+        assert(returnedList.hasOwnProperty("length"), "returned value is not listish");
+        assert(returnedList.length > 0, "returned value has length 0");
+    });
+});
+
+describe("fileIO", function() {
     it("should only return type good from getGood()", function() {
         var returnedList = file.getGood(), i, j, len, types;
         for(i = 0, len = returnedList.length; i < len; i++) {

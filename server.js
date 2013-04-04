@@ -195,18 +195,12 @@ app.get('/scrape',function(req,res){
 
 });
 
-function getKeywords(){
-	keywordsFile = fs.readFileSync("./keywords.json")
-	keywords = JSON.parse(keywordsFile.toString());
 
-	return keywords;
 
-}
-
-function checkKeywords(keywords, sentance){
+function checkKeywords(keywords, sentence){
 	
 
-	var msgTokens = tokenizer.tokenize(sentance);
+	var msgTokens = tokenizer.tokenize(sentence);
  
 
 	var matched = [];
@@ -236,7 +230,7 @@ function checkKeywords(keywords, sentance){
 // Read files
 var bad = file.getBad();
 var good = file.getGood();
-var keywords = getKeywords();
+var keywords = file.getKeywords();
 
 
 var port = 8080;

@@ -54,7 +54,13 @@
       debug && console.log('Bad:'+msgs.length);
 
       return msgs;
+    }
+    
+    this.getKeywords = function(){
+	    keywordsFile = fs.readFileSync("./keywords.json")
+      keywords = JSON.parse(keywordsFile.toString());
 
+      return keywords;
     }
 
     return module.exports = this;
