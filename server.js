@@ -1,7 +1,8 @@
-var express = require('express');
-var brain = require('brain');
-var fs = require("fs");
-var app = express();
+var express = require('express')
+  ,  brain  = require('brain')
+  , fs      = require("fs")
+  , natural = require('natural')
+  , app     = express();
 
 jqueryfile = fs.readFileSync("./jquery-1.8.0.min.js")
 jquery = jqueryfile.toString()
@@ -13,7 +14,7 @@ app.use(express.bodyParser());
 var net = new brain.NeuralNetwork();
 
 // Fire up the NLP
-var natural = require('natural'),
+
 tokenizer = new natural.WordTokenizer(),
 classifier = new natural.BayesClassifier();
 var trained = false;

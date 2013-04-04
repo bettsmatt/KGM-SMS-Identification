@@ -1,0 +1,16 @@
+{
+  "name": "KGM-SMS-Integration",
+  "description": "~.~",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "*",
+    "brain":"*",
+    "natural":"*"
+  },
+  "scripts": {
+    "start": "server.js"
+  },
+  "engines": {
+    "node": "0.8.x"
+  }
+}
