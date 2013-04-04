@@ -3,6 +3,7 @@ var express = require('express')
   , fs      = require('fs')
   , natural = require('natural')
   , file    = require('./fileReader')
+  , classifiers = require('./classifiers')
   , app     = express();
 
 jqueryfile = fs.readFileSync("./jquery-1.8.0.min.js")
@@ -20,92 +21,6 @@ tokenizer = new natural.WordTokenizer(),
 classifier = new natural.BayesClassifier();
 var trained = false;
 
-
-/*
- * Train the neural network.
- *
- */
-function trainNN (){
-
-	var data = bad.splice(0,20).concat(good.splice(0,20));
-
-	var count = 0;
-
-	console.log('Training with : ' + data.length + ' messages');
-
-	// Use NLP to break into keywords
-	var training = data.map(function(msg){
-
-		var msgTokens = tokenizer.tokenize(msg.data);
-	
-		// Make each message into an object, with each token as a field, whos value is the occourance of the word.
-  	// This forms the input for brain
-  	// for example {drugs:1}
-
-		var input = {}
-		msgTokens.forEach(function (e,i,a){
-			input[e] = 1;
-		});
-
-		// Check
-		//console.log(input);
-
-		// Change tokens into format needed for input
-		// Make each type the message is associated with as 1 for the output
-  	// For example {sexting:1,bullying:1}
-
-  	var output = {}  	
-  	msg.types.forEach(function (e,i,a){
-  		output[e] = 1
-  	});
-
-		// Check
-  	//console.log(output);
-
-  	return {input:input,output:output};
-
-	});
-
-
-	net.train(training);
-
-	console.log('Done training');
-	
-
-}
-
-// Classify using the Neural Network 
-function classifyNN(msg){
-
-	var msgTokens = tokenizer.tokenize(msg);
-
-	var input = {}
-	msgTokens.forEach(function (e,i,a){
-		input[e] = 1;
-	});
-
-	return net.run(input);
-
-}
-
-// Train the BayesClassifier
-function trainBayes(){
-	var data = bad.concat(good);
-
-	for(var i = 0 ; i < data.length ; i ++){
-		classifier.addDocument(data[i].data, data[i].types[0]);
-	}
-
-	classifier.train();
-
-}
-
-// Classify using the BayesClassifier 
-function classifyBayes(msg){
-	return classifier.classify(msg);
-}
-
-
 /*
  * End point for testing a message form data with a message{content} data field
  */
@@ -115,16 +30,16 @@ app.post('/test', function(req, res){
 	// lazy load the classifiers
 	if(!trained){
 		
-		trainBayes();
-		trainNN();
+		classifiers.trainBayes(classifier, bad, good);
+		net = classifiers.trainNN(net, bad, good);
 
 		trained = true;
 	}
 
 	// Test both
-	outputBayes = classifyBayes(msg)
-	outputNN = classifyNN(msg)
-	outputKeywords = checkKeywords(keywords, msg);
+	outputBayes = classifiers.classifyBayes(classifier, msg)
+	outputNN = classifiers.classifyNN(net, msg)
+	outputKeywords = classifiers.checkKeywords(keywords, msg);
 
  	res.writeHead(200, { 'Content-Type': 'application/json' });
   res.write(JSON.stringify({
@@ -136,7 +51,6 @@ app.post('/test', function(req, res){
  	res.end();
 
 });
-
 
 /*
  * Scrapping code, to get messages from tfln
@@ -194,38 +108,6 @@ app.get('/scrape',function(req,res){
 	}
 
 });
-
-
-
-function checkKeywords(keywords, sentence){
-	
-
-	var msgTokens = tokenizer.tokenize(sentence);
- 
-
-	var matched = [];
-
-	keywords.forEach(function (e,i,a){
-
-		var type = e.type;
-
-		e.words.forEach(function (keyword,i,a) {
-
-			msgTokens.forEach(function (msgtoken, i, a){
-
-				if(msgtoken === keyword){
-					matched.push(type);
-				}
-
-			})
-
-		});
-
-	});
-
-	return matched;
-
-}
 
 // Read files
 var bad = file.getBad();
