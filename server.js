@@ -110,7 +110,7 @@ function classifyBayes(msg){
 app.post('/test', function(req, res){
 	var msg = req.body.message.content;
 
-	// lazy load the classifyers
+	// lazy load the classifiers
 	if(!trained){
 		
 		trainBayes();
