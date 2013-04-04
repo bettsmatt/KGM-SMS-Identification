@@ -200,7 +200,7 @@ app.get('/scrape',function(req,res){
  */
 
 /*
- * Parse my message dump from s2, these are marked as good messages. Well, alot better then the ones from tfln...
+ * Parse my message dump from s2, these are marked as good messages. Well, a lot better then the ones from tfln...
  *
  */
 function formatGoodFromPhone(){
