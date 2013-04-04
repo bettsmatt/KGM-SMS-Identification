@@ -1,7 +1,8 @@
 var express = require('express')
-  ,  brain  = require('brain')
-  , fs      = require("fs")
+  , brain   = require('brain')
+  , fs      = require('fs')
   , natural = require('natural')
+  , file    = require('./fileReader')
   , app     = express();
 
 jqueryfile = fs.readFileSync("./jquery-1.8.0.min.js")
@@ -194,61 +195,6 @@ app.get('/scrape',function(req,res){
 
 });
 
-/*
- * Read the scrapped messages from tfln, this is easier then adding a libary for non async or waiting till all pages are scraped.
- * It will do for this 'MVP', but should be changed sometime. 
- *
- */
-
-/*
- * Parse my message dump from s2, these are marked as good messages. Well, a lot better then the ones from tfln...
- *
- */
-function formatGoodFromPhone(){
-
-		msgFile = fs.readFileSync("./messages.json")
-		msgs = JSON.parse(msgFile.toString());
-
-
-		console.log(msgs.size);
-
-		formatted = msgs.items.map(function (e,i,a){
-			return {data:e.synopsis,types:['safe']}
-		});
-
-		console.log('parsed ' +formatted.length + ' messages')
-
-		return formatted;
-
-}
-
-/*
- * Read in the JSON dump for good messages
- *
- */
-function getGood(){
-
-	msgFile = fs.readFileSync("./good.json")
-	msgs = JSON.parse(msgFile.toString());
-	console.log('Good:' +msgs.length);
-
-	return msgs;
-}
-
-/*
- * Read in the JSON dump for bad messages
- *
- */
-function getBad(){
-
-	msgFile = fs.readFileSync("./bad.json")
-	msgs = JSON.parse(msgFile.toString());
-	console.log('Bad:'+msgs.length);
-
-	return msgs;
-
-}
-
 function getKeywords(){
 	keywordsFile = fs.readFileSync("./keywords.json")
 	keywords = JSON.parse(keywordsFile.toString());
@@ -288,8 +234,8 @@ function checkKeywords(keywords, sentance){
 }
 
 // Read files
-var bad = getBad();
-var good = getGood();
+var bad = file.getBad();
+var good = file.getGood();
 var keywords = getKeywords();
 
 
