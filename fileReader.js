@@ -12,7 +12,7 @@
      */
     this.formatGoodFromPhone = function(debug){
 
-        msgFile = fs.readFileSync("./messages.json")
+        msgFile = fs.readFileSync("./data/messages.json")
         msgs = JSON.parse(msgFile.toString());
 
 
@@ -34,7 +34,7 @@
      */
     this.getGood = function(debug){
 
-      msgFile = fs.readFileSync("./good.json")
+      msgFile = fs.readFileSync("./data/good.json")
       msgs = JSON.parse(msgFile.toString());
 
       debug && console.log('Good:' +msgs.length);
@@ -48,7 +48,7 @@
      */
     this.getBad = function(debug){
 
-      msgFile = fs.readFileSync("./bad.json")
+      msgFile = fs.readFileSync("./data/bad.json")
       msgs = JSON.parse(msgFile.toString());
 
       debug && console.log('Bad:'+msgs.length);
@@ -57,7 +57,7 @@
     }
     
     this.getKeywords = function(){
-	    keywordsFile = fs.readFileSync("./keywords.json")
+	    keywordsFile = fs.readFileSync("./data/keywords.json")
       keywords = JSON.parse(keywordsFile.toString());
 
       return keywords;
